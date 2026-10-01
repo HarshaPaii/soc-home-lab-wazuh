@@ -1,0 +1,12 @@
+# Secrets and lab artifacts: never commit
+client.keys
+*.pem
+*.key
+*.vdi
+*.iso
+*.ova
+*.vbox
+*.log
+*.pcap
+*password*
+*credentials*
