@@ -8,7 +8,7 @@
 | **Verdict** | True positive: controlled attack simulation in my own lab |
 | **Timestamps** | IST (UTC+5:30) unless marked UTC |
 
-> **Note on method.** The three stages were run as separate test sessions on 2026-10-07, not as one continuous incident. This report orders them as an attacker would (execution → discovery → persistence) and gives the real timestamp for each. Both the execution and persistence events carry the same logon session (`LogonId 0x25fbb`), which ties them to one user session.
+> **Note on method.** The three stages were run as separate test sessions on 2026-10-07, not as one continuous incident. This report orders them as an attacker would (execution → discovery → persistence) and gives the real timestamp for each. The execution, discovery and persistence events all carry the same logon session (`LogonId 0x25fbb`, same user, High integrity), which ties them to one user session even though they came from different PowerShell windows.
 
 ## 1. Alert
 
@@ -23,7 +23,7 @@ Wazuh raised three alert families on the same host and user:
 ## 2. Triage
 
 - **92057** was the highest-signal alert: hidden window, no profile, encoded payload, High integrity. I decoded the payload instead of trusting the level (see section 6).
-- **92031/92033** are level 3 on their own, but they matter in context: recon commands launched from PowerShell on a host that had just run an encoded command.
+- **92031/92033** are level 3 on their own, but they matter in context: `net user` and `net localgroup administrators` launched from PowerShell enumerate local accounts and the admin group, the usual next step after gaining execution. Wazuh mapped them to T1087 (Account Discovery) and T1059.001.
 - **100010** is my custom rule. The command line shows a task named `UpdaterTask2` that runs daily at 03:30. That name mimics a legitimate update task, which is a typical persistence disguise.
 - **A false positive I ruled out:** rule 92058 (Application Compatibility Database launched, level 12) recurred four times in the same period. The first instance had command line `sdbinst.exe -m -bg` with parent `svchost.exe`, a benign Windows maintenance pattern. Later instances showed no parent in the dashboard grid, so I treated them as the same recurring pattern and closed them as false positives, flagged to revisit if the pattern changes. Evidence: [rule detail](../screenshots/03-triage-and-telemetry/tri-01-rule-92058-detail.png), [recurrence](../screenshots/03-triage-and-telemetry/tri-02-rule-92058-recurrence.png), [parent process](../screenshots/03-triage-and-telemetry/tri-03-sysmon-event-parent-svchost.png).
 
@@ -34,11 +34,12 @@ Wazuh raised three alert families on the same host and user:
 | 02:01 (Oct 7) | Persistence | First scheduled task `UpdaterTask` created; rule 100010 fired |
 | 15:48:48 | Persistence | `schtasks /create /tn UpdaterTask2 ... /sc daily /st 03:30 /f`; alert at 15:48:49 |
 | 20:37:23 | Execution | `powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand ...`; alert at 20:37:49 |
-| 23:30:48-49 | Discovery | Discovery commands from PowerShell; rules 92031 and 92033 fired (two pairs) |
+| 23:30:13 | Discovery | `net user`, then `net localgroup administrators`, both launched from `powershell.exe` |
+| 23:30:48-49 | Discovery | Rules 92031 and 92033 fired for both commands (two pairs of alerts) |
 
 Logical attack order: **20:37 execution → 23:30 discovery → 15:48 persistence**, with the stages run on different occasions.
 
-Detection latency (event to alert): about 0.5 s for 100010 and about 26 s for 92057.
+Detection latency (event to alert): about 0.5 s for 100010, about 26 s for 92057 and about 35 s for 92033. The differences come from how quickly the agent forwarded each batch, not from rule logic.
 
 ## 4. Root cause
 
@@ -60,6 +61,13 @@ All activity runs from an interactive, elevated `powershell.exe` session started
 - Process: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`, PID 7020, parent PID 592 (`powershell.exe`)
 - SHA256: `8BB6FA8C283B4D92120B1EF249A9B311B0F804D4CABBE9981159976C8BE76A5E`
 - MD5: `61F649A6FDC374A6BF36C860519E017C`
+
+**Discovery (92033), 2026-10-07 18:00:13 UTC**
+
+- Command lines: `net.exe user` and `net.exe localgroup administrators`
+- Parent: `powershell.exe` (PID 7112), same user and `LogonId 0x25fbb`
+- SHA256 (`net.exe`): `BB3E638C8B5B6EF80847E364AEEF2796CAD25D3539CF9B41D3820FA48943E777`
+- Rule mapping: T1087 Account Discovery, T1059.001 PowerShell
 
 **Persistence (100010), 2026-10-07 10:18:48 UTC**
 

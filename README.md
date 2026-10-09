@@ -27,7 +27,7 @@ All VMs use bridged networking on one /24 subnet. Addresses come from DHCP, so t
 | # | Attack simulated | MITRE ATT&CK | Rule ID | Level | Source |
 |---|---|---|---|---|---|
 | 1 | Encoded PowerShell (`-EncodedCommand`) | T1059.001 | 92057 | 12 | Default |
-| 2 | Discovery burst (`whoami`, `net user`, `tasklist`) | TA0007 (T1087 on 92033) | 92031 / 92033 | 3 | Default |
+| 2 | Account discovery (`net user`, `net localgroup administrators`) | TA0007 (T1087 on 92033) | 92031 / 92033 | 3 | Default |
 | 3 | Registry Run key persistence | T1547.001 | 92302 | 6 | Default |
 | 4 | Scheduled task persistence (`schtasks /create`) | T1053.005 | **100010** | 12 | **Custom** |
 | 5 | Local admin account creation | T1098 | 60154 | 12 | Default |
