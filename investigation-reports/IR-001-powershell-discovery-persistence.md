@@ -47,7 +47,7 @@ All activity runs from an interactive, elevated `powershell.exe` session started
 ## 5. Scope
 
 - **Hosts:** one (`win11-endpoint`). The lab has a single monitored endpoint, so lateral movement could not be assessed.
-- **Accounts:** one (`Harsha_Pai`). A separate local-admin creation test (rule 60154, test account `labadmin`) was a different simulation; `net user` on the endpoint now shows no `labadmin` account.
+- **Accounts:** one (`Harsha_Pai`). A separate local-admin creation test (rule 60154, test account `labadmin`) was a different simulation; the account was deleted on 2026-10-09 at 18:55:49 IST (`net user labadmin /delete`, which Wazuh logged as rule 92033, a benign trigger of a discovery rule), and `net user` on 2026-10-10 shows no `labadmin` account.
 - **Pivot query used in the dashboard:** `agent.name: "win11-endpoint" AND data.win.eventdata.logonId: "0x25fbb"` returns every event in the same logon session.
 - **Persistence artifacts created during the test:** scheduled tasks `UpdaterTask` and `UpdaterTask2` (confirmed absent on 2026-10-10, see section 7), plus test files in `C:\Users\Public`.
 
