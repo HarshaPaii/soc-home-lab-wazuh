@@ -20,7 +20,7 @@ flowchart LR
 | win11-endpoint | Monitored endpoint | Windows 11 Home 25H2 | Sysmon + Wazuh agent 4.9.2, 192.168.1.11 |
 | Kali | Attacker / recon | Kali 2026.2 | 192.168.1.19 |
 
-All VMs use bridged networking on one /24 subnet. The host is an Intel i3-1115G4 with 8 GB RAM, so VMs run one at a time when needed. The Wazuh agent queues events locally and flushes them when the manager reconnects, so no data is lost and timestamps stay accurate.
+All VMs use bridged networking on one /24 subnet. Addresses come from DHCP, so the endpoint's IP changed over the project (alerts show 192.168.1.15 on Oct 7 and 192.168.1.6 on Oct 9); the agent ID (001) and name stayed the same. The host is an Intel i3-1115G4 with 8 GB RAM, so VMs run one at a time when needed. The Wazuh agent queues events locally and flushes them when the manager reconnects, so no data is lost and timestamps stay accurate.
 
 ## Detection coverage
 
